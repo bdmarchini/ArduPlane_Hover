@@ -10,6 +10,7 @@
  *  version 2.1 of the License, or (at your option) any later version.
  */
 
+
 class AP_AHRS_DCM : public AP_AHRS
 {
 public:

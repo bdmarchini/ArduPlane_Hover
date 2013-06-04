@@ -87,4 +87,16 @@ bool AP_AHRS::airspeed_estimate(float *airspeed_ret)
 		return true;
 	}
 	return false;
+
+/*//////////////// Quaternion Stuff that I added //////////////////////////////
+	// Euler to Quaternion conversion function
+quaternion AP_AHRS::euler2quaternion () {
+	quaternion temp;
+	temp.q1 = sin(roll/2)*cos(pitch/2)*cos(yaw/2)-cos(roll/2)*sin(pitch/2)*sin(yaw/2);
+	temp.q2 = cos(roll/2)*sin(pitch/2)*cos(yaw/2)+sin(roll/2)*cos(pitch/2)*sin(yaw/2);
+	temp.q3 = cos(roll/2)*cos(pitch/2)*sin(yaw/2)-sin(roll/2)*sin(pitch/2)*cos(yaw/2);
+	temp.q4 = cos(roll/2)*cos(pitch/2)*cos(yaw/2)+sin(roll/2)*sin(pitch/2)*sin(yaw/2);
+	return (temp);
+}
+*/////////////////////////////////////////////////////////////////////////////////
 }

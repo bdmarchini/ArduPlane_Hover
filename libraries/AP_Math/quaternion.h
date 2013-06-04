@@ -51,5 +51,10 @@ public:
 
     // create eulers from a quaternion
     void        to_euler(float *roll, float *pitch, float *yaw);
+
+////////////////////////// Quaternion Stuff I added //////////////////////////
+	Quaternion qerror (Quaternion);
+/////////////////////////////////////////////////////////////////////////////
+
 };
 #endif // QUATERNION_H

@@ -720,4 +720,5 @@ bool AP_AHRS_DCM::airspeed_estimate(float *airspeed_ret)
 					  _gps->ground_speed*0.01 + _wind_max);
 	}
 	return ret;
+
 }

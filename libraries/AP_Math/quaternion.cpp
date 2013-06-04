@@ -87,3 +87,18 @@ void Quaternion::to_euler(float *roll, float *pitch, float *yaw)
                      1 - 2.0*(q3*q3 + q4*q4));
     }
 }
+
+///////////////////////////// Quaternion Stuff I Added //////////////////////////
+
+// Quaternion error calculation based on Hamilton equation
+// qc is commanded quaternion
+Quaternion Quaternion::qerror (Quaternion qc) {
+	Quaternion temp;
+	temp.q1 =  q1*qc.q1 + q2*qc.q2 + q3*qc.q3 + q4*qc.q4;
+	temp.q2 = -q2*qc.q1 + q1*qc.q2 + q4*qc.q3 - q3*qc.q4;
+	temp.q3 = -q3*qc.q1 - q4*qc.q2 + q1*qc.q3 + q2*qc.q4;
+	temp.q4 = -q4*qc.q1 + q3*qc.q2 - q2*qc.q3 + q1*qc.q4;
+	return (temp);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////

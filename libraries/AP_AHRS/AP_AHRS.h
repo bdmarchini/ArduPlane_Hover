@@ -23,6 +23,10 @@
  #include "WProgram.h"
 #endif
 
+/*//////////////// Quaternion Stuff that I added //////////////////////////////
+	#include "Quaternion.h"
+*////////////////////////////////////////////////////////////////////////////
+
 class AP_AHRS
 {
 public:
@@ -182,6 +186,14 @@ protected:
 
     // acceleration due to gravity in m/s/s
     static const float _gravity = 9.80665;
+
+	
+/*//////////////// Quaternion Stuff that I added //////////////////////////////
+	friend class quaternion;
+	quaternion euler2quaternion ();
+*////////////////////////////////////////////////////////////////////////////
+
+
 };
 
 #include <AP_AHRS_DCM.h>
