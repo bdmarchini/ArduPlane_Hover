@@ -538,6 +538,7 @@ int32_t roll_error_centdeg=0, pitch_error_centdeg=0, yaw_error_centdeg=0;
 static int32_t roll_PID_input=0; 
 static int32_t pitch_PID_input=0; 
 static int32_t yaw_PID_input=0;
+float hover_yaw_hold, hover_yaw_hold_deg;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1207,7 +1208,7 @@ static void update_current_flight_mode(void)
             break;
 
 		case HOVER_PID: // currently only does what normal stabilize mode does ////////////////////////////////////////////////////////////////
-			qcommand.from_euler(0, float (PI/2), ahrs.yaw);
+			qcommand.from_euler(0, float (PI/2), hover_yaw_hold);
 			qerr = qcurrent.qerror(qcommand);
 		// Convert quaternion error back to euler angles (rad)
 			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);

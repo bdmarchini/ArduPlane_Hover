@@ -103,6 +103,7 @@ static void stabilize()
 		pitch_PID_input = tempcalc;
 	}
 	g.channel_pitch.servo_out = g.pidServoPitch.get_pid(pitch_PID_input, speed_scaler);
+	//g.channel_pitch.servo_out = g.pidServoPitch.get_pid(tempcalc, speed_scaler);
 #else // APM_CONTROL == ENABLED
     // calculate roll and pitch control using new APM_Control library
 	g.channel_roll.servo_out = g.rollController.get_servo_out(nav_roll_cd, speed_scaler, control_mode == STABILIZE);
@@ -218,14 +219,19 @@ static void calc_nav_yaw(float speed_scaler, float ch4_inf)
     }
 
 #if APM_CONTROL == DISABLED
+	if (control_mode == HOVER_PID) {
+		yaw_PID_input = yaw_error_centdeg;
+	}	else {
     // always do rudder mixing from roll
     g.channel_rudder.servo_out = g.kff_rudder_mix * g.channel_roll.servo_out;
 
     // a PID to coordinate the turn (drive y axis accel to zero)
     Vector3f temp = imu.get_accel();
     int32_t error = -temp.y*100.0;
+	yaw_PID_input = error;
+	}
 
-    g.channel_rudder.servo_out += g.pidServoRudder.get_pid(error, speed_scaler);
+    g.channel_rudder.servo_out += g.pidServoRudder.get_pid(yaw_PID_input, speed_scaler);
 #else // APM_CONTROL == ENABLED
     // use the new APM_Control library
 	g.channel_rudder.servo_out = g.yawController.get_servo_out(speed_scaler, ch4_inf < 0.25) + g.channel_roll.servo_out * g.kff_rudder_mix;

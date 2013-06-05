@@ -344,14 +344,19 @@ static void set_mode(byte mode)
 
     switch(control_mode)
     {
-    case INITIALISING:
+    case STABILIZE:
+	case INITIALISING:
     case MANUAL:
     case CIRCLE:
-    case STABILIZE:
     case FLY_BY_WIRE_A:
     case FLY_BY_WIRE_B:
-	case HOVER_PID:  // I added this /////////////////////////////////////////////////////////////////////////////////////////////
+		g.pidServoRudder.reset_I();
         break;
+
+	case HOVER_PID:  // I added this /////////////////////////////////////////////////////////////
+		hover_yaw_hold = ahrs.yaw;
+		hover_yaw_hold_deg = hover_yaw_hold*(180/PI);
+		break;
 
     case AUTO:
         update_auto();
