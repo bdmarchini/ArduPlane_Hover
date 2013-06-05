@@ -224,19 +224,6 @@ AP_IMU_INS imu( &ins );
 
 AP_AHRS_DCM ahrs(&imu, g_gps);
 
-///////////// Quaternion stuff I added ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Quaternion qcurrent;
-double vert = sqrt(2)/2;
-Quaternion qcommand(vert,0,vert,0);
-Quaternion qerr;
-float roll_error=0, pitch_error=0, yaw_error=0;
-float * _roll_error = &roll_error; 
-float * _pitch_error = &pitch_error;
-float * _yaw_error = &yaw_error;
-float roll_error_deg=0, pitch_error_deg=0, yaw_error_deg=0;
-int32_t roll_error_centdeg=0, pitch_error_centdeg=0, yaw_error_centdeg=0;
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 #elif HIL_MODE == HIL_MODE_SENSORS
 // sensor emulators
 AP_ADC_HIL adc;
@@ -537,6 +524,23 @@ static int32_t nav_roll_cd;
 // The instantaneous desired pitch angle.  Hundredths of a degree
 static int32_t nav_pitch_cd;
 
+///////////// Quaternion stuff I added ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Quaternion qcurrent;
+double vert = sqrt(2)/2;
+Quaternion qcommand;
+Quaternion qerr;
+float roll_error=0, pitch_error=0, yaw_error=0;
+float * _roll_error = &roll_error; 
+float * _pitch_error = &pitch_error;
+float * _yaw_error = &yaw_error;
+float roll_error_deg=0, pitch_error_deg=0, yaw_error_deg=0;
+int32_t roll_error_centdeg=0, pitch_error_centdeg=0, yaw_error_centdeg=0;
+static int32_t roll_PID_input=0; 
+static int32_t pitch_PID_input=0; 
+static int32_t yaw_PID_input=0;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Waypoint distances
 ////////////////////////////////////////////////////////////////////////////////
@@ -778,7 +782,7 @@ static void fast_loop()
 ///////////// Quaternion stuff I added ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Convert current euler angles to quaternion
 	qcurrent.from_euler(ahrs.roll, ahrs.pitch, ahrs.yaw);
-	// Calculate Quaternion error
+	/*/ Calculate Quaternion error
 	qerr = qcurrent.qerror(qcommand);
 	// Convert quaternion error back to euler angles (rad)
 	qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
@@ -786,7 +790,7 @@ static void fast_loop()
 	roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
 	// Convert from deg to centidegrees
 	roll_error_centdeg = int32_t (roll_error_deg*100); pitch_error_centdeg = int32_t (pitch_error_deg*100); yaw_error_centdeg = int32_t (yaw_error_deg*100);
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     // uses the yaw from the DCM to give more accurate turns
@@ -1202,7 +1206,17 @@ static void update_current_flight_mode(void)
             calc_nav_pitch();
             break;
 
-        case STABILIZE:
+		case HOVER_PID: // currently only does what normal stabilize mode does ////////////////////////////////////////////////////////////////
+			qcommand.from_euler(0, float (PI/2), ahrs.yaw);
+			qerr = qcurrent.qerror(qcommand);
+		// Convert quaternion error back to euler angles (rad)
+			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
+		// Convert from rad to deg
+			roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
+		// Convert from deg to centidegrees
+			roll_error_centdeg = int32_t (roll_error_deg*100); pitch_error_centdeg = int32_t (pitch_error_deg*100); yaw_error_centdeg = int32_t (yaw_error_deg*100);
+
+		case STABILIZE:
             nav_roll_cd        = 0;
             nav_pitch_cd       = 0;
             // throttle is passthrough

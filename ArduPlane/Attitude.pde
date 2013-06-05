@@ -76,18 +76,33 @@ static void stabilize()
     }
 
 #if APM_CONTROL == DISABLED
+	
+	// Use quaternions for hover mode /////////////////////////////////////////////////////////
+	if (control_mode == HOVER_PID) {
+		roll_PID_input = roll_error_centdeg;
+	}	else {
+		roll_PID_input = (nav_roll_cd - ahrs.roll_sensor);
+	}
+	g.channel_roll.servo_out = g.pidServoRoll.get_pid(roll_PID_input, speed_scaler);
 	// Calculate dersired servo output for the roll
 	// ---------------------------------------------
-	g.channel_roll.servo_out = g.pidServoRoll.get_pid((nav_roll_cd - ahrs.roll_sensor), speed_scaler);
-	int32_t tempcalc = nav_pitch_cd +
-	        fabs(ahrs.roll_sensor * g.kff_pitch_compensation) +
-	        (g.channel_throttle.servo_out * g.kff_throttle_to_pitch) -
-	        (ahrs.pitch_sensor - g.pitch_trim_cd);
-    if (inverted_flight) {
-        // when flying upside down the elevator control is inverted
-        tempcalc = -tempcalc;
-    }
-	g.channel_pitch.servo_out = g.pidServoPitch.get_pid(tempcalc, speed_scaler);
+	//g.channel_roll.servo_out = g.pidServoRoll.get_pid((nav_roll_cd - ahrs.roll_sensor), speed_scaler);
+
+	// Use quaternions for hover mode /////////////////////////////////////////////////////////
+	if (control_mode == HOVER_PID) {
+		pitch_PID_input = pitch_error_centdeg;
+	}	else {	
+		int32_t tempcalc = nav_pitch_cd +
+				fabs(ahrs.roll_sensor * g.kff_pitch_compensation) +
+				(g.channel_throttle.servo_out * g.kff_throttle_to_pitch) -
+				(ahrs.pitch_sensor - g.pitch_trim_cd);
+		if (inverted_flight) {
+			// when flying upside down the elevator control is inverted
+			tempcalc = -tempcalc;
+		}
+		pitch_PID_input = tempcalc;
+	}
+	g.channel_pitch.servo_out = g.pidServoPitch.get_pid(pitch_PID_input, speed_scaler);
 #else // APM_CONTROL == ENABLED
     // calculate roll and pitch control using new APM_Control library
 	g.channel_roll.servo_out = g.rollController.get_servo_out(nav_roll_cd, speed_scaler, control_mode == STABILIZE);

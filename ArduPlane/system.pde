@@ -83,13 +83,22 @@ static void init_ardupilot()
     //
     Serial.begin(SERIAL0_BAUD, 128, SERIAL_BUFSIZE);
 
-    // GPS serial port.
-    //
-    // standard gps running
-#if DEBUGGER
-	Serial1.begin(SERIAL0_BAUD, 128, SERIAL_BUFSIZE);
+#if HIL_MODE == HIL_MODE_ATTITUDE // I added this ////////////////////////////////////////////////////////////////////////////////////////////
+	#ifdef DEBUGGER
+		#if DEBUGGER 
+			Serial1.begin(SERIAL0_BAUD, 128, SERIAL_BUFSIZE);
+		#else
+			// GPS serial port.
+			//
+			// standard gps running
+			Serial1.begin(38400, 256, 16);
+		#endif
+	#endif
 #else
-    Serial1.begin(38400, 256, 16);
+	// GPS serial port.
+	//
+	// standard gps running
+	Serial1.begin(38400, 256, 16);
 #endif
     Serial.printf_P(PSTR("\n\nInit " THISFIRMWARE
                          "\n\nFree RAM: %u\n"),
@@ -341,6 +350,7 @@ static void set_mode(byte mode)
     case STABILIZE:
     case FLY_BY_WIRE_A:
     case FLY_BY_WIRE_B:
+	case HOVER_PID:  // I added this /////////////////////////////////////////////////////////////////////////////////////////////
         break;
 
     case AUTO:
