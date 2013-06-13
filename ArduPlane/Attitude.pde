@@ -203,6 +203,143 @@ static void calc_throttle()
 
 }
 
+
+/*****************************************
+* Calculate throttle setting during hover (in fast freq loop) ///////////////////////////////////////////I added this/////////////////////////////////////////////////
+*****************************************/
+static void calc_throttle_hover()
+{
+	int32_t throttle_diverge;
+	int32_t throttle_sink;
+	int32_t throttle_hover;
+	
+	/********************************
+	Divegence throttle control logic
+	*********************************/
+	// Check for divergence criteria in yaw and pitch axis only (ignore roll direction, it will take care of itself)
+	check_pitch_diverge();
+	check_yaw_diverge();
+
+	if (diverge_pitch || diverge_yaw) {
+	throttle_diverge = int16_t (g.throttle_max * 0.75);
+	} else {
+		throttle_diverge = int16_t (g.throttle_max * 0.4);
+	}
+	
+
+	/********************************
+	Sink rate throttle control logic
+	*********************************/
+	// Set desired sink rate
+	int32_t sink_rate_cd  = int32_t (g.channel_throttle.control_in - 50)*(100/25); //Command is in centimeters/second since thats what altitude readings are in
+	int32_t sink_rate_error = sink_rate_cd - sink_rate;
+
+	// Use total energy error PID values to command sink rate
+	throttle_sink = g.pidTeThrottle.get_pid(sink_rate_error);
+
+	// Pick maximum throttle setting to send to servo
+	if (throttle_diverge > throttle_sink) {
+		throttle_hover = throttle_diverge;
+	} else {
+		throttle_hover = throttle_sink;
+	}
+
+	g.channel_throttle.servo_out = constrain(throttle_hover, g.throttle_min.get(), g.throttle_max.get());
+}
+
+static void calc_sink_rate()
+{
+// Calculate current sink rate
+	uint32_t tnow = millis();    
+	uint32_t dt = tnow - last_t_alt;
+    //float output            = 0;
+    float delta_time;
+
+	if (last_t_alt == 0 || dt > 1000) {        
+		dt = 0; //reset dt if lots of time has passed and on first switching into hover mode
+	}
+
+    last_t_alt = tnow;
+    delta_time = (float)dt / 1000.0f; //in seconds
+	
+	
+	// Compute derivative component if time has elapsed    
+	if (dt > 0) {
+		float derivative;
+
+		if (isnan(last_derivative_alt)) {
+			// we've just done a reset, suppress the first derivative
+			// term as we don't want a sudden change in input to cause
+			// a large D output change			
+			derivative = 0;
+			last_derivative_alt = 0;
+		} else {
+
+			derivative = (float (current_loc.alt - last_alt)) / delta_time;
+		}
+
+	// discrete low pass filter, cuts out the        
+	// high frequency noise that can drive the controller crazy
+        float RC = 1/(2*PI*1);  // cutoff frequency set to 1 Hz because of repeated values problem coming from altitude reading
+        derivative = last_derivative_alt +
+                     ((delta_time / (RC + delta_time)) *
+                      (derivative - last_derivative_alt));
+
+        // update state
+        last_derivative_alt    = derivative;
+		last_alt = current_loc.alt;	
+
+		sink_rate = int32_t (derivative);  // sink rate in centimeters/second
+	}
+	// if no time has passed or if dt gets reset, dont change value of sink_rate
+}
+
+static void check_pitch_diverge()
+{
+	double angle_max = 5.0;
+	
+	if (diverge_pitch) {
+    // Airplane has already diverged in pitch axis
+		if (fabs(double (pitch_error_deg))  <= angle_max) {
+			diverge_pitch = false;
+		} else {
+			diverge_pitch = true;
+		}
+	} else {
+		// Airplane hasnt converged yet so check for divergence
+		if (fabs(double (pitch_error_deg)) > angle_max) {
+			diverge_pitch = true;
+		} else {
+			diverge_pitch = false;
+		}
+	}
+}
+
+static void check_yaw_diverge()
+{
+	double angle_max = 5.0;
+	
+	if (diverge_yaw) {
+    // Airplane has already diverged in pitch axis
+		if (fabs(double (yaw_error_deg))  <= angle_max) {
+			diverge_yaw = false;
+		} else {
+			diverge_yaw = true;
+		}
+	} else {
+		// Airplane hasnt converged yet so check for divergence
+		if (fabs(double (yaw_error_deg)) > angle_max) {
+			diverge_yaw = true;
+		} else {
+			diverge_yaw = false;
+		}
+	}
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 /*****************************************
 * Calculate desired roll/pitch/yaw angles (in medium freq loop)
 *****************************************/
@@ -349,13 +486,14 @@ static bool suppress_throttle(void)
         return false;
     }
 
-    if (g_gps != NULL && 
-        g_gps->status() == GPS::GPS_OK && 
-        g_gps->ground_speed >= 500) {
-        // we're moving at more than 5 m/s
-        throttle_suppressed = false;
-        return false;        
-    }
+	
+	if (g_gps != NULL && 
+		g_gps->status() == GPS::GPS_OK && 
+		g_gps->ground_speed >= 500) {
+		// we're moving at more than 5 m/s
+		throttle_suppressed = false;
+		return false;        
+	}
 
     // throttle remains suppressed
     return true;

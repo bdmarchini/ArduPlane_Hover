@@ -30,3 +30,5 @@
 
 #define DEBUGGER ENABLED
 
+#define HOVER_THROTTLE ENABLED
+

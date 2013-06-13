@@ -539,6 +539,19 @@ static int32_t roll_PID_input=0;
 static int32_t pitch_PID_input=0; 
 static int32_t yaw_PID_input=0;
 float hover_yaw_hold, hover_yaw_hold_deg;
+
+// throttle flags for hover divergence
+//static bool diverge_roll;
+static bool diverge_pitch = false;
+static bool diverge_yaw = false;
+static uint32_t last_t_pitch;
+static uint32_t last_t_yaw;
+
+// variables needed for sink rate calculation
+static int32_t sink_rate;
+static int32_t last_alt;
+static uint32_t last_t_alt;
+static float last_derivative_alt;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -783,16 +796,7 @@ static void fast_loop()
 ///////////// Quaternion stuff I added ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Convert current euler angles to quaternion
 	qcurrent.from_euler(ahrs.roll, ahrs.pitch, ahrs.yaw);
-	/*/ Calculate Quaternion error
-	qerr = qcurrent.qerror(qcommand);
-	// Convert quaternion error back to euler angles (rad)
-	qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
-	// Convert from rad to deg
-	roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
-	// Convert from deg to centidegrees
-	roll_error_centdeg = int32_t (roll_error_deg*100); pitch_error_centdeg = int32_t (pitch_error_deg*100); yaw_error_centdeg = int32_t (yaw_error_deg*100);
-*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // uses the yaw from the DCM to give more accurate turns
     calc_bearing_error();
@@ -907,6 +911,11 @@ static void medium_loop()
         // Read altitude from sensors
         // ------------------
         update_alt();
+
+		//////////////////////////////////////////////////////////////////////////I added this//////////////////////////////////////////////////////////////
+		// calculate current sink rate
+		calc_sink_rate();
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // altitude smoothing
         // ------------------
@@ -1207,7 +1216,7 @@ static void update_current_flight_mode(void)
             calc_nav_pitch();
             break;
 
-		case HOVER_PID: // currently only does what normal stabilize mode does ////////////////////////////////////////////////////////////////
+		case HOVER_PID: //////////////////////////////////// I added this ////////////////////////////////////////////////////////////////////////////////////////
 			qcommand.from_euler(0, float (PI/2), hover_yaw_hold);
 			qerr = qcurrent.qerror(qcommand);
 		// Convert quaternion error back to euler angles (rad)
@@ -1216,6 +1225,13 @@ static void update_current_flight_mode(void)
 			roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
 		// Convert from deg to centidegrees
 			roll_error_centdeg = int32_t (roll_error_deg*100); pitch_error_centdeg = int32_t (pitch_error_deg*100); yaw_error_centdeg = int32_t (yaw_error_deg*100);
+		
+
+		#if HOVER_THROTTLE 
+				// Calculate hover throttle
+					calc_throttle_hover();
+		#endif
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		case STABILIZE:
             nav_roll_cd        = 0;
