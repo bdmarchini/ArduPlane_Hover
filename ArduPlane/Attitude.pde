@@ -223,7 +223,7 @@ static void calc_throttle_hover()
 	if (diverge_pitch || diverge_yaw) {
 	throttle_diverge = int16_t (g.throttle_max * 0.75);
 	} else {
-		throttle_diverge = int16_t (g.throttle_max * 0.5);
+		throttle_diverge = int16_t (g.throttle_max * 0.4);
 		// changed min throttle to 50% because airplane was falling too fast
 	}
 	
@@ -232,7 +232,7 @@ static void calc_throttle_hover()
 	Sink rate throttle control logic
 	*********************************/
 	// Set desired sink rate
-	int32_t sink_rate_cd  = int32_t (g.channel_throttle.control_in - 50)*(100/50); //Command is in centimeters/second since thats what altitude readings are in
+	int32_t sink_rate_cd  = int32_t (g.channel_throttle.control_in - 50)*(100/25); //Command is in centimeters/second since thats what altitude readings are in
 	// changed max sink rate to +- 1 m/s from original 2 because airplane was falling too fast
 	int32_t sink_rate_error = sink_rate_cd - sink_rate;
 
