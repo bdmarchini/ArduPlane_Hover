@@ -78,7 +78,7 @@ static void stabilize()
 #if APM_CONTROL == DISABLED
 	
 	// Use quaternions for hover mode /////////////////////////////////////////////////////////
-	if (control_mode == HOVER_PID) {
+	if (control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE || control_mode == HOVER_ADAPTIVE) {
 		roll_PID_input = roll_error_centdeg;
 	}	else {
 		roll_PID_input = (nav_roll_cd - ahrs.roll_sensor);
@@ -89,7 +89,7 @@ static void stabilize()
 	//g.channel_roll.servo_out = g.pidServoRoll.get_pid((nav_roll_cd - ahrs.roll_sensor), speed_scaler);
 
 	// Use quaternions for hover mode /////////////////////////////////////////////////////////
-	if (control_mode == HOVER_PID) {
+	if (control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE || control_mode == HOVER_ADAPTIVE) {
 		pitch_PID_input = pitch_error_centdeg;
 	}	else {	
 		int32_t tempcalc = nav_pitch_cd +
@@ -224,7 +224,7 @@ static void calc_throttle_hover()
 	throttle_diverge = int16_t (g.throttle_max * 0.75);
 	} else {
 		throttle_diverge = int16_t (g.throttle_max * 0.4);
-		// changed min throttle to 50% because airplane was falling too fast
+		// changed min throttle to 50% because airplane was falling too fast (nope didnt help, changed it back to original)
 	}
 	
 
@@ -233,7 +233,7 @@ static void calc_throttle_hover()
 	*********************************/
 	// Set desired sink rate
 	int32_t sink_rate_cd  = int32_t (g.channel_throttle.control_in - 50)*(100/25); //Command is in centimeters/second since thats what altitude readings are in
-	// changed max sink rate to +- 1 m/s from original 2 because airplane was falling too fast
+	// changed max sink rate to +- 1 m/s from original 2 because airplane was falling too fast (nope didnt help, changed it back to original)
 	int32_t sink_rate_error = sink_rate_cd - sink_rate;
 
 	// Use total energy error PID values to command sink rate
@@ -254,7 +254,6 @@ static void calc_sink_rate()
 // Calculate current sink rate
 	uint32_t tnow = millis();    
 	uint32_t dt = tnow - last_t_alt;
-    //float output            = 0;
     float delta_time;
 
 	if (last_t_alt == 0 || dt > 1000) {        
@@ -338,6 +337,43 @@ static void check_yaw_diverge()
 	}
 }
 
+
+/*****************************************
+* Calcuate pitch reference model output (in fast freq loop) 
+*****************************************/
+float pitch_reference_model() {
+	// time variable
+	uint32_t tnow = millis();    
+	uint32_t dt = tnow - t_start_hover;
+    float delta_time = (float)dt / 1000.0f; //in seconds
+
+	float theta;
+
+if (ZETA <= 0) { //no damping
+	theta = pitch_final + cos(delta_time*OMEGA_N)*(pitch_init-pitch_final);
+
+} else if (ZETA > 0 && ZETA < 1) { //under damped 
+	theta = pitch_final + exp(-delta_time*OMEGA_N*ZETA)*(pitch_init - pitch_final) *
+		(cos(delta_time*OMEGA_N*sqrt(1-pow(ZETA,2))) - (
+		 ((sin(delta_time*OMEGA_N*sqrt(1-pow(ZETA,2))))*(OMEGA_N*ZETA - (2*pitch_init*OMEGA_N*ZETA - 2*pitch_final*OMEGA_N*ZETA)/(pitch_init - pitch_final))) / 
+		 (OMEGA_N*sqrt(1-pow(ZETA,2)))
+		 ));
+
+} else if (ZETA == 1) { //over damped
+	theta = pitch_final + exp(-delta_time * OMEGA_N)*(pitch_init - pitch_final) + delta_time * exp(-delta_time * OMEGA_N)*(pitch_init*OMEGA_N - pitch_final*OMEGA_N);
+
+} else if (ZETA > 1) { // critically damped 
+	theta = pitch_final + exp(-delta_time*OMEGA_N*ZETA)*(pitch_init - pitch_final) *
+		(cosh(delta_time*OMEGA_N*sqrt(pow(ZETA,2)-1)) - (
+		 ((sinh(delta_time*OMEGA_N*sqrt(pow(ZETA,2)-1)))*(OMEGA_N*ZETA - (2*pitch_init*OMEGA_N*ZETA - 2*pitch_final*OMEGA_N*ZETA)/(pitch_init - pitch_final))) / 
+		 (OMEGA_N*sqrt(pow(ZETA,2)-1))
+		 ));
+} else {
+	theta = 0; 
+}
+
+return (theta);
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

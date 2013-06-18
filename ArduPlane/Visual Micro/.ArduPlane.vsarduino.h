@@ -2,6 +2,7 @@
 #define _VSARDUINO_H_
 //Board = Arduino Mega 2560 or Mega ADK
 #define __AVR_ATmega2560__
+#define _VMDEBUG 1
 #define ARDUINO 101
 #define __AVR__
 #define F_CPU 16000000L
@@ -45,6 +46,7 @@ static void calc_throttle_hover();
 static void calc_sink_rate();
 static void check_pitch_diverge();
 static void check_yaw_diverge();
+float pitch_reference_model();
 static void calc_nav_yaw(float speed_scaler, float ch4_inf);
 static void calc_nav_pitch();
 static void calc_nav_roll();

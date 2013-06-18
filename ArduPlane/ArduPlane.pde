@@ -552,6 +552,15 @@ static int32_t sink_rate;
 static int32_t last_alt;
 static uint32_t last_t_alt;
 static float last_derivative_alt;
+
+//variable needed for reference model
+static float pitch_final; // desired pitch angle at end of manuever
+static float pitch_init; // initial pitch angle at start of manuever
+static float pitch_desired; // current desired pitch angle
+static float ZETA = 1; // damping ratio, needs to be greater than 0
+static float OMEGA_N = 1.8/1; // natural frequency
+static uint32_t t_start_hover; // time at start of hover manuever
+static float pitch_desired_deg;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1217,7 +1226,25 @@ static void update_current_flight_mode(void)
             break;
 
 		case HOVER_PID: //////////////////////////////////// I added this ////////////////////////////////////////////////////////////////////////////////////////
-			qcommand.from_euler(0, float (PI/2), hover_yaw_hold);
+		case HOVER_PID_REFERENCE:
+		case HOVER_ADAPTIVE:
+
+			if (control_mode == HOVER_PID) {
+				pitch_final = (PI/24);
+				pitch_desired = pitch_final;
+			} else if (control_mode == HOVER_PID_REFERENCE) {
+				pitch_final = (PI/12);
+				pitch_desired = pitch_reference_model();
+			} else if (control_mode == HOVER_ADAPTIVE) {
+				pitch_final = (PI/2);
+				pitch_desired = pitch_reference_model();
+			} else {
+				pitch_desired = 0;
+			}
+
+			pitch_desired_deg = pitch_desired*(180/PI);
+
+			qcommand.from_euler(0, pitch_desired, hover_yaw_hold);
 			qerr = qcurrent.qerror(qcommand);
 		// Convert quaternion error back to euler angles (rad)
 			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
@@ -1225,6 +1252,8 @@ static void update_current_flight_mode(void)
 			roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
 		// Convert from deg to centidegrees
 			roll_error_centdeg = int32_t (roll_error_deg*100); pitch_error_centdeg = int32_t (pitch_error_deg*100); yaw_error_centdeg = int32_t (yaw_error_deg*100);
+
+		
 		
 
 		#if HOVER_THROTTLE 

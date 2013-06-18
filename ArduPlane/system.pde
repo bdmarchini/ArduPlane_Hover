@@ -354,6 +354,11 @@ static void set_mode(byte mode)
 		g.pidServoRudder.reset_I();
         break;
 
+	case HOVER_PID_REFERENCE:
+	case HOVER_ADAPTIVE:
+		t_start_hover = millis(); // get the start time of the hover manuever 
+		pitch_init = ahrs.pitch;
+
 	case HOVER_PID:  // I added this /////////////////////////////////////////////////////////////
 		hover_yaw_hold = ahrs.yaw;
 		hover_yaw_hold_deg = hover_yaw_hold*(180/PI);
