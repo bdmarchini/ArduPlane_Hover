@@ -15,8 +15,8 @@
 // The following are the recommended settings for Xplane
 // simulation. Remove the leading "/* and trailing "*/" to enable:
 
-//#define HIL_MODE            HIL_MODE_DISABLED
-#define HIL_MODE            HIL_MODE_ATTITUDE
+#define HIL_MODE            HIL_MODE_DISABLED
+//#define HIL_MODE            HIL_MODE_ATTITUDE
 
 /*
  *  // HIL_MODE SELECTION
@@ -30,5 +30,5 @@
 
 #define DEBUGGER ENABLED
 
-//#define HOVER_THROTTLE ENABLED
-#define HOVER_THROTTLE DISABLED
+#define HOVER_THROTTLE ENABLED
+//#define HOVER_THROTTLE DISABLED

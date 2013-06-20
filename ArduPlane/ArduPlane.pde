@@ -524,7 +524,10 @@ static int32_t nav_roll_cd;
 // The instantaneous desired pitch angle.  Hundredths of a degree
 static int32_t nav_pitch_cd;
 
-///////////// Quaternion stuff I added ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////// I added this stuff ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// variables needed for quaternion error calculation
 Quaternion qcurrent;
 double vert = sqrt(2)/2;
 Quaternion qcommand;
@@ -557,12 +560,28 @@ static float last_derivative_alt;
 static float pitch_final; // desired pitch angle at end of manuever
 static float pitch_init; // initial pitch angle at start of manuever
 static float pitch_desired; // current desired pitch angle
-static float ZETA = 1; // damping ratio, needs to be greater than 0
-static float OMEGA_N = 1.8/1; // natural frequency
+const float ZETA = 1; // damping ratio, needs to be greater than 0
+const float OMEGA_N = 1.8/3; // natural frequency (denominator is rise time in seconds)
 static uint32_t t_start_hover; // time at start of hover manuever
 static float pitch_desired_deg;
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//variables needed for adaptive controller
+static Matrix3f G;                     /////Initialize adaptive gain matrix
+static Matrix3f Gdot;			      // Initialize derivative of adaptive gain matrix
+const Matrix3f G0(-1.0, 0.0, 0.0,     /////Initial values for adaptive gain matrix
+				  0.0, -1.0, 0.0, 
+				  0.0, 0.0, -1.0);
+
+const Matrix3f H(0.1, 0.0, 0.0,     //// Values for adaptive parameter matrix
+				  0.0, 0.1, 0.0, 
+				  0.0, 0.0, 0.05);
+
+static Vector3f e_y; 
+static uint32_t last_t_G; // Need to keep track of time for integrating Gdot
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 // Waypoint distances
@@ -1230,14 +1249,15 @@ static void update_current_flight_mode(void)
 		case HOVER_ADAPTIVE:
 
 			if (control_mode == HOVER_PID) {
-				pitch_final = (PI/24);
+				pitch_final = (PI/2);
 				pitch_desired = pitch_final;
 			} else if (control_mode == HOVER_PID_REFERENCE) {
-				pitch_final = (PI/12);
+				pitch_final = (PI/2);
 				pitch_desired = pitch_reference_model();
 			} else if (control_mode == HOVER_ADAPTIVE) {
 				pitch_final = (PI/2);
 				pitch_desired = pitch_reference_model();
+				//pitch_desired = pitch_final;
 			} else {
 				pitch_desired = 0;
 			}
@@ -1245,16 +1265,37 @@ static void update_current_flight_mode(void)
 			pitch_desired_deg = pitch_desired*(180/PI);
 
 			qcommand.from_euler(0, pitch_desired, hover_yaw_hold);
-			qerr = qcurrent.qerror(qcommand);
-		// Convert quaternion error back to euler angles (rad)
-			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
-		// Convert from rad to deg
-			roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
-		// Convert from deg to centidegrees
-			roll_error_centdeg = int32_t (roll_error_deg*100); pitch_error_centdeg = int32_t (pitch_error_deg*100); yaw_error_centdeg = int32_t (yaw_error_deg*100);
 
 		
+		if (control_mode == HOVER_ADAPTIVE) { // Need to apply adaptive controller to euler errors 	
+			
+			qerr = qcommand.qerror(qcurrent);                          // VERY IMPORTANT: qerr is calculated opposite way for MRAC compared to FSFB
+			// Convert quaternion error back to euler angles (rad)
+			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
+
+			//qerr = qcurrent.qerror(qcommand);
+			// Convert quaternion error back to euler angles (rad)
+			//qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
+
+			// Convert from rad to deg
+			roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
+
+			// Need to apply adaptive controller to euler errors 
+			calc_Gdot(roll_error_deg, pitch_error_deg, yaw_error_deg);
+			integrate_Gdot();
+			calc_adaptive_output(roll_error_deg, pitch_error_deg, yaw_error_deg);
+
+		} else {
+			qerr = qcurrent.qerror(qcommand);
+			// Convert quaternion error back to euler angles (rad)
+			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
+			// Convert from rad to deg
+			roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);
+		}
 		
+		////// Get error values in correct units for PID controllers
+		// Convert from deg to centidegrees
+			roll_error_centdeg = int32_t (roll_error_deg*100); pitch_error_centdeg = int32_t (pitch_error_deg*100); yaw_error_centdeg = int32_t (yaw_error_deg*100);
 
 		#if HOVER_THROTTLE 
 				// Calculate hover throttle

@@ -354,8 +354,11 @@ static void set_mode(byte mode)
 		g.pidServoRudder.reset_I();
         break;
 
-	case HOVER_PID_REFERENCE:
 	case HOVER_ADAPTIVE:
+		G = G0; // reinitialize G matrix to G0
+		Gdot.zero(); // Reset Gdot matrix to all zeros
+
+	case HOVER_PID_REFERENCE:
 		t_start_hover = millis(); // get the start time of the hover manuever 
 		pitch_init = ahrs.pitch;
 

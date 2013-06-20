@@ -301,14 +301,14 @@ static void check_pitch_diverge()
 	
 	if (diverge_pitch) {
     // Airplane has already diverged in pitch axis
-		if (fabs(double (pitch_error_deg))  <= angle_max) {
+		if (fabs(double (pitch_error*(180/PI)))  <= angle_max) { // Note: need to do check based on pitch_error and not pitch_error deg because the later gets changed by the adaptive controller and blows up even when error is small
 			diverge_pitch = false;
 		} else {
 			diverge_pitch = true;
 		}
 	} else {
 		// Airplane hasnt converged yet so check for divergence
-		if (fabs(double (pitch_error_deg)) > angle_max) {
+		if (fabs(double (pitch_error*(180/PI))) > angle_max) { // Note: need to do check based on pitch_error and not pitch_error deg because the later gets changed by the adaptive controller and blows up even when error is small
 			diverge_pitch = true;
 		} else {
 			diverge_pitch = false;
@@ -322,14 +322,14 @@ static void check_yaw_diverge()
 	
 	if (diverge_yaw) {
     // Airplane has already diverged in pitch axis
-		if (fabs(double (yaw_error_deg))  <= angle_max) {
+		if (fabs(double (yaw_error*(180/PI)))  <= angle_max) { // Note: need to do check based on yaw_error and not yaw_error deg because the later gets changed by the adaptive controller and blows up even when error is small
 			diverge_yaw = false;
 		} else {
 			diverge_yaw = true;
 		}
 	} else {
 		// Airplane hasnt converged yet so check for divergence
-		if (fabs(double (yaw_error_deg)) > angle_max) {
+		if (fabs(double (yaw_error*(180/PI))) > angle_max) {  // Note: need to do check based on yaw_error and not yaw_error deg because the later gets changed by the adaptive controller and blows up even when error is small
 			diverge_yaw = true;
 		} else {
 			diverge_yaw = false;
@@ -339,7 +339,7 @@ static void check_yaw_diverge()
 
 
 /*****************************************
-* Calcuate pitch reference model output (in fast freq loop) 
+* Calcuate pitch reference model output (in fast freq loop) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 *****************************************/
 float pitch_reference_model() {
 	// time variable
@@ -376,6 +376,65 @@ return (theta);
 }
 
 
+/*****************************************
+* Calcuate Gdot for adaptive controller(in fast freq loop) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+*****************************************/
+static void calc_Gdot(float e_roll, float e_pitch, float e_yaw) {
+	
+	Vector3f e_y(e_roll, e_pitch, e_yaw);  //initialize error vector
+
+	Vector3f row1, row2, row3; // set up rows of e_y*e_y' matrix
+
+	// multiply error vector by its transpose e_y*ey'
+	row1 = e_y*e_y.x;
+	row2 = e_y*e_y.y;
+	row3 = e_y*e_y.z;
+
+	Matrix3f ey_ey(row1, row2, row3); // create and populate e_y*e_y' matrix
+
+	Matrix3f temp = ey_ey * H; 
+
+	Gdot = temp * (-1.0);  // Gdot = - e_y' * e_y * H 
+
+	// Test for correct sign on G0
+	//Gdot.zero();  // if Gdot = zeros then there should be no modification to e_y and should get same results as PID controller
+
+}
+
+static void integrate_Gdot() {
+	uint32_t tnow = millis();
+    uint32_t dt = tnow - last_t_G;
+    //float output            = 0;
+    float delta_time;
+
+    if (last_t_G == 0 || dt > 1000) {
+        dt = 0;
+
+		// Adaptive controler hasn't been used for a full second then zero
+		// the intergator term. This prevents I buildup from a
+		// previous fight mode from causing a massive return before
+		// the integrator gets a chance to correct itself
+		//_integrator = 0;
+    }
+    last_t_G = tnow;
+
+    delta_time = (float)dt / 1000.0;
+	
+	G += Gdot * delta_time;
+}
+
+static void calc_adaptive_output(float& e_roll, float& e_pitch, float& e_yaw) { // passed errors by reference so that I can change their value without having to create new variables
+	
+	Vector3f e_y(e_roll, e_pitch, e_yaw);  //initialize error vector
+
+	Vector3f temp = G * e_y; 
+
+	// Reassign error values after doing adaptive manipulation
+	e_roll = temp.x;
+	e_pitch = temp.y;
+	e_yaw = temp.z;
+
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*****************************************
