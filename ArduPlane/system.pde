@@ -100,6 +100,7 @@ static void init_ardupilot()
 	// standard gps running
 	Serial1.begin(38400, 256, 16);
 #endif
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     Serial.printf_P(PSTR("\n\nInit " THISFIRMWARE
                          "\n\nFree RAM: %u\n"),
@@ -354,6 +355,7 @@ static void set_mode(byte mode)
 		g.pidServoRudder.reset_I();
         break;
 
+		////////////////////////////////////////////////// I added this //////////////////////////////////////////////////////////////////////////////////////////////////////
 	case HOVER_ADAPTIVE:
 		G = G0; // reinitialize G matrix to G0
 		Gdot.zero(); // Reset Gdot matrix to all zeros
@@ -362,10 +364,11 @@ static void set_mode(byte mode)
 		t_start_hover = millis(); // get the start time of the hover manuever 
 		pitch_init = ahrs.pitch;
 
-	case HOVER_PID:  // I added this /////////////////////////////////////////////////////////////
+	case HOVER_PID:  
 		hover_yaw_hold = ahrs.yaw;
 		hover_yaw_hold_deg = hover_yaw_hold*(180/PI);
 		break;
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case AUTO:
         update_auto();

@@ -28,7 +28,13 @@
  *
  */
 
+// Allows debug messages to be sent through GPS terminal (automatically turned off when HIL mode is disabled)
 #define DEBUGGER ENABLED
 
+// Switches between computer controlled throttle commands and manual pass through
 #define HOVER_THROTTLE ENABLED
 //#define HOVER_THROTTLE DISABLED
+
+// Used limit pitch target for hover modes during testing
+//#define PITCH_LIMITER ENABLED
+#define PITCH_LIMITER DISABLED 

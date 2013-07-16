@@ -524,8 +524,8 @@ static int32_t nav_roll_cd;
 // The instantaneous desired pitch angle.  Hundredths of a degree
 static int32_t nav_pitch_cd;
 
-///////////// I added this stuff ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////// I added this stuff ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // variables needed for quaternion error calculation
 Quaternion qcurrent;
@@ -561,7 +561,7 @@ static float pitch_final; // desired pitch angle at end of manuever
 static float pitch_init; // initial pitch angle at start of manuever
 static float pitch_desired; // current desired pitch angle
 const float ZETA = 1; // damping ratio, needs to be greater than 0
-const float OMEGA_N = 1.8/3; // natural frequency (denominator is rise time in seconds)
+const float OMEGA_N = 1.8/1; // natural frequency (denominator is rise time in seconds)
 static uint32_t t_start_hover; // time at start of hover manuever
 static float pitch_desired_deg;
 
@@ -572,16 +572,16 @@ const Matrix3f G0(-1.0, 0.0, 0.0,     /////Initial values for adaptive gain matr
 				  0.0, -1.0, 0.0, 
 				  0.0, 0.0, -1.0);
 
-const Matrix3f H(0.1, 0.0, 0.0,     //// Values for adaptive parameter matrix
-				  0.0, 0.1, 0.0, 
-				  0.0, 0.0, 0.05);
+const Matrix3f H(0.01, 0.0, 0.0,     //// Values for adaptive parameter matrix
+				  0.0, 0.01, 0.0, 
+				  0.0, 0.0, 0.01);
 
 static Vector3f e_y; 
 static uint32_t last_t_G; // Need to keep track of time for integrating Gdot
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 // Waypoint distances
@@ -741,6 +741,9 @@ AP_Mount camera_mount2(&current_loc, g_gps, &ahrs, 1);
 ////////////////////////////////////////////////////////////////////////////////
 
 void setup() {
+	/////////////////////////////////////////////////////////////////////////// Stuff I added ///////////////////////////////////////////////////////////////////////
+	ahrs._control_mode = &control_mode;
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     memcheck_init();
     init_ardupilot();
 }
@@ -760,7 +763,7 @@ void loop()
         // Execute the fast loop
         // ---------------------
         fast_loop();
-
+		
         // Execute the medium loop
         // -----------------------
         medium_loop();
@@ -1249,13 +1252,25 @@ static void update_current_flight_mode(void)
 		case HOVER_ADAPTIVE:
 
 			if (control_mode == HOVER_PID) {
-				pitch_final = (PI/2);
+				if (PITCH_LIMITER) { // Sets different final pitch value for HIL testing since X-plane cant handle going to 90 deg pitch
+				pitch_final = (PI/18);
+				} else {
+					pitch_final = (PI/2);
+				}
 				pitch_desired = pitch_final;
 			} else if (control_mode == HOVER_PID_REFERENCE) {
-				pitch_final = (PI/2);
+				if (PITCH_LIMITER) { // Sets different final pitch value for HIL testing since X-plane cant handle going to 90 deg pitch
+				pitch_final = (PI/9);
+				} else {
+					pitch_final = (PI/2);
+				}
 				pitch_desired = pitch_reference_model();
-			} else if (control_mode == HOVER_ADAPTIVE) {
-				pitch_final = (PI/2);
+			} else if (control_mode == HOVER_ADAPTIVE) { // Sets different final pitch value for HIL testing since X-plane cant handle going to 90 deg pitch
+				if (PITCH_LIMITER) {
+				pitch_final = (PI/6);
+				} else {
+					pitch_final = (PI/2);
+				}
 				pitch_desired = pitch_reference_model();
 				//pitch_desired = pitch_final;
 			} else {
@@ -1273,7 +1288,7 @@ static void update_current_flight_mode(void)
 			// Convert quaternion error back to euler angles (rad)
 			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
 
-			//qerr = qcurrent.qerror(qcommand);
+			//qerr = qcurrent.qerror(qcommand);                     // This was just a check to make sure above qerr was calculated the right way
 			// Convert quaternion error back to euler angles (rad)
 			//qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
 

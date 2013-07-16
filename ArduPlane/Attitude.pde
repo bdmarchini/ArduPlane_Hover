@@ -77,7 +77,7 @@ static void stabilize()
 
 #if APM_CONTROL == DISABLED
 	
-	// Use quaternions for hover mode /////////////////////////////////////////////////////////
+	// Use quaternions for hover mode //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE || control_mode == HOVER_ADAPTIVE) {
 		roll_PID_input = roll_error_centdeg;
 	}	else {
@@ -88,7 +88,7 @@ static void stabilize()
 	// ---------------------------------------------
 	//g.channel_roll.servo_out = g.pidServoRoll.get_pid((nav_roll_cd - ahrs.roll_sensor), speed_scaler);
 
-	// Use quaternions for hover mode /////////////////////////////////////////////////////////
+	// Use quaternions for hover mode ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE || control_mode == HOVER_ADAPTIVE) {
 		pitch_PID_input = pitch_error_centdeg;
 	}	else {	
@@ -203,9 +203,11 @@ static void calc_throttle()
 
 }
 
+////////////////////////////////////////////////////////////////////////////I added this/////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////// All of these functions were added by me ///////////////////////////////////////////////////////////////////////////////////
 
 /*****************************************
-* Calculate throttle setting during hover (in fast freq loop) ///////////////////////////////////////////I added this/////////////////////////////////////////////////
+* Calculate throttle setting during hover (in fast freq loop) 
 *****************************************/
 static void calc_throttle_hover()
 {
@@ -339,7 +341,7 @@ static void check_yaw_diverge()
 
 
 /*****************************************
-* Calcuate pitch reference model output (in fast freq loop) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+* Calcuate pitch reference model output (in fast freq loop)
 *****************************************/
 float pitch_reference_model() {
 	// time variable
@@ -377,7 +379,7 @@ return (theta);
 
 
 /*****************************************
-* Calcuate Gdot for adaptive controller(in fast freq loop) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+* Calcuate Gdot for adaptive controller(in fast freq loop) 
 *****************************************/
 static void calc_Gdot(float e_roll, float e_pitch, float e_yaw) {
 	
@@ -435,7 +437,8 @@ static void calc_adaptive_output(float& e_roll, float& e_pitch, float& e_yaw) { 
 	e_yaw = temp.z;
 
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// End of custom functions I added///////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*****************************************
 * Calculate desired roll/pitch/yaw angles (in medium freq loop)
@@ -453,8 +456,11 @@ static void calc_nav_yaw(float speed_scaler, float ch4_inf)
     }
 
 #if APM_CONTROL == DISABLED
-	if (control_mode == HOVER_PID) {
-		yaw_PID_input = yaw_error_centdeg;
+	/////////////////////////////////////////////////////////////////// I added this stuff//////////////////////////////////////////////////////////////////////////////////////////////////
+	if (control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE || control_mode == HOVER_ADAPTIVE) {  
+		
+		g.channel_rudder.servo_out = g.pidServoRudder.get_pid(yaw_error_centdeg, speed_scaler);
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	}	else {
     // always do rudder mixing from roll
     g.channel_rudder.servo_out = g.kff_rudder_mix * g.channel_roll.servo_out;
@@ -462,10 +468,10 @@ static void calc_nav_yaw(float speed_scaler, float ch4_inf)
     // a PID to coordinate the turn (drive y axis accel to zero)
     Vector3f temp = imu.get_accel();
     int32_t error = -temp.y*100.0;
-	yaw_PID_input = error;
+	
+    g.channel_rudder.servo_out += g.pidServoRudder.get_pid(error, speed_scaler);
 	}
 
-    g.channel_rudder.servo_out += g.pidServoRudder.get_pid(yaw_PID_input, speed_scaler);
 #else // APM_CONTROL == ENABLED
     // use the new APM_Control library
 	g.channel_rudder.servo_out = g.yawController.get_servo_out(speed_scaler, ch4_inf < 0.25) + g.channel_roll.servo_out * g.kff_rudder_mix;

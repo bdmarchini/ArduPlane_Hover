@@ -41,7 +41,7 @@ AP_AHRS_DCM::update(void)
 
     // ask the IMU how much time this sensor reading represents
     delta_t = _imu->get_delta_time();
-
+	
     // Get current values for gyros
     _gyro_vector  = _imu->get_gyro();
     _accel_vector = _imu->get_accel();
@@ -52,8 +52,21 @@ AP_AHRS_DCM::update(void)
     // Normalize the DCM matrix
     normalize();
 
+	/////////////////////////////////////////////////////////////////////////// I added this ///////////////////////////////////////////////////////////////////////
+	/*
+	if (*_control_mode > 16) { // Anything above 16 is flight modes that I added
+		//(*_control_mode == HOVER_PID || *_control_mode == HOVER_PID_REFERENCE || *_control_mode == HOVER_ADAPTIVE)  
+		//alternative for if statement, not sure if HOVER_PID, etc defined in this scope
+		 
+		_fly_forward = false; // makes it so that GPS ground track isnt used for yaw gyro drift correction
+	} else {
+		_fly_forward = true;
+	}
+	*/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     // Perform drift correction
     drift_correction(delta_t);
+	
 
     // paranoid check for bad values in the DCM matrix
     check_matrix();
