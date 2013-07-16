@@ -223,10 +223,9 @@ static void calc_throttle_hover()
 	check_yaw_diverge();
 
 	if (diverge_pitch || diverge_yaw) {
-	throttle_diverge = int16_t (g.throttle_max * 0.75);
+	throttle_diverge = int16_t (g.throttle_max * DIVERGENCE_THROTTLE_MAX);
 	} else {
-		throttle_diverge = int16_t (g.throttle_max * 0.4);
-		// changed min throttle to 50% because airplane was falling too fast (nope didnt help, changed it back to original)
+		throttle_diverge = int16_t (g.throttle_max * DIVERGENCE_THROTTLE_MIN);  // min and max values defined in APM_Config.h
 	}
 	
 
@@ -234,8 +233,8 @@ static void calc_throttle_hover()
 	Sink rate throttle control logic
 	*********************************/
 	// Set desired sink rate
-	int32_t sink_rate_cd  = int32_t (g.channel_throttle.control_in - 50)*(100/25); //Command is in centimeters/second since thats what altitude readings are in
-	// changed max sink rate to +- 1 m/s from original 2 because airplane was falling too fast (nope didnt help, changed it back to original)
+	int32_t sink_rate_cd  = int32_t (g.channel_throttle.control_in - 50)*(SINK_RATE_MAX/50)*(100); //Command is in centimeters/second since thats what altitude readings are in
+	// SINK_RATE_MAX is the maximum commanded magnitude of the sink/climb rate defined in m/s in APM_Config.h
 	int32_t sink_rate_error = sink_rate_cd - sink_rate;
 
 	// Use total energy error PID values to command sink rate
@@ -283,7 +282,7 @@ static void calc_sink_rate()
 
 	// discrete low pass filter, cuts out the        
 	// high frequency noise that can drive the controller crazy
-        float RC = 1/(2*PI*1);  // cutoff frequency set to 1 Hz because of repeated values problem coming from altitude reading
+        float RC = 1/(2*PI*_fCut_alt);  // cutoff frequency _fCut_alt set in APM_Config.h
         derivative = last_derivative_alt +
                      ((delta_time / (RC + delta_time)) *
                       (derivative - last_derivative_alt));
@@ -299,7 +298,7 @@ static void calc_sink_rate()
 
 static void check_pitch_diverge()
 {
-	double angle_max = 5.0;
+	double angle_max = DIVERGENCE_ANGLE;
 	
 	if (diverge_pitch) {
     // Airplane has already diverged in pitch axis
@@ -320,7 +319,7 @@ static void check_pitch_diverge()
 
 static void check_yaw_diverge()
 {
-	double angle_max = 5.0;
+	double angle_max = DIVERGENCE_ANGLE;
 	
 	if (diverge_yaw) {
     // Airplane has already diverged in pitch axis

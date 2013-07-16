@@ -38,3 +38,19 @@
 // Used limit pitch target for hover modes during testing
 //#define PITCH_LIMITER ENABLED
 #define PITCH_LIMITER DISABLED 
+
+
+/////// Hard coded variables used in control algorithms///////////////////////////////////////////////////////////////
+
+// Preset throttle settings used with either yaw or pitch divergence criteria are met
+#define DIVERGENCE_THROTTLE_MAX 0.75
+#define DIVERGENCE_THROTTLE_MIN 0.4
+
+// Angle (deg) at which divergence criteria is met when in hover
+#define DIVERGENCE_ANGLE 5.0
+
+// Maximum magnitude of commanded sink/climb rate (m/s)
+#define SINK_RATE_MAX 2
+
+// Fequency cut off (Hz) for discrete low pass filter on altitude derivative
+#define _fCut_alt 20   // Set at 1 Hz originally bit I think that might have been hurting throttle controller performance so moved it back to standard 20 Hz

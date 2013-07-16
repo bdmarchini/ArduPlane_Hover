@@ -627,6 +627,15 @@ print_flight_mode(uint8_t mode)
     case LOITER:
         Serial.println_P(PSTR("Loiter"));
         break;
+	case HOVER_PID:
+        Serial.println_P(PSTR("Hover_PID"));
+        break;
+	case HOVER_PID_REFERENCE:
+        Serial.println_P(PSTR("Hover_PID_Reference"));
+        break;
+	case HOVER_ADAPTIVE:
+        Serial.println_P(PSTR("Hover_Adaptive"));
+        break;
     default:
         Serial.println_P(PSTR("---"));
         break;
