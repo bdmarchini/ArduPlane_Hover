@@ -84,6 +84,8 @@ static void stabilize()
 		roll_PID_input = (nav_roll_cd - ahrs.roll_sensor);
 	}
 	g.channel_roll.servo_out = g.pidServoRoll.get_pid(roll_PID_input, speed_scaler);
+	g.channel_roll.servo_out = constrain(g.channel_roll.servo_out, -SERVO_MAX, SERVO_MAX); // Added constrain to prevent runaway PWM rates
+
 	// Calculate dersired servo output for the roll
 	// ---------------------------------------------
 	//g.channel_roll.servo_out = g.pidServoRoll.get_pid((nav_roll_cd - ahrs.roll_sensor), speed_scaler);
@@ -103,6 +105,9 @@ static void stabilize()
 		pitch_PID_input = tempcalc;
 	}
 	g.channel_pitch.servo_out = g.pidServoPitch.get_pid(pitch_PID_input, speed_scaler);
+	g.channel_pitch.servo_out = constrain(g.channel_pitch.servo_out, -SERVO_MAX, SERVO_MAX); // Added constrain to prevent runaway PWM rates
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	//g.channel_pitch.servo_out = g.pidServoPitch.get_pid(tempcalc, speed_scaler);
 #else // APM_CONTROL == ENABLED
     // calculate roll and pitch control using new APM_Control library
@@ -233,12 +238,13 @@ static void calc_throttle_hover()
 	Sink rate throttle control logic
 	*********************************/
 	// Set desired sink rate
-	int32_t sink_rate_cd  = int32_t (g.channel_throttle.control_in - 50)*(SINK_RATE_MAX/50)*(100); //Command is in centimeters/second since thats what altitude readings are in
+	int32_t sink_rate_cd  = int32_t ((g.channel_throttle.control_in - 50)*((float)SINK_RATE_MAX/50)*(100)); //Command is in centimeters/second since thats what altitude readings are in
 	// SINK_RATE_MAX is the maximum commanded magnitude of the sink/climb rate defined in m/s in APM_Config.h
 	int32_t sink_rate_error = sink_rate_cd - sink_rate;
 
 	// Use total energy error PID values to command sink rate
-	throttle_sink = g.pidTeThrottle.get_pid(sink_rate_error);
+	throttle_sink = g.pidTeThrottle.get_pid(sink_rate_error, 1.0 , true);  // Dont need to scale input because AMP code uses 0-100 throttle instead of 0-1 like me, so using cm/sec as an input gives correct 0-100 scale with same gains 
+		// use positive_I_only = true so that integrator terms is limited to 0 -> IMAX instead of -IMAX -> IMAX 
 
 	// Pick maximum throttle setting to send to servo
 	if (throttle_diverge > throttle_sink) {
@@ -459,6 +465,7 @@ static void calc_nav_yaw(float speed_scaler, float ch4_inf)
 	if (control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE || control_mode == HOVER_ADAPTIVE) {  
 		
 		g.channel_rudder.servo_out = g.pidServoRudder.get_pid(yaw_error_centdeg, speed_scaler);
+		g.channel_rudder.servo_out = constrain(g.channel_rudder.servo_out, -SERVO_MAX, SERVO_MAX);  // Added constrain to prevent runaway PWM rates
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	}	else {
     // always do rudder mixing from roll

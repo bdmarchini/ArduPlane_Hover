@@ -38,7 +38,7 @@ public:
     ///
     /// @returns		The updated control output.
     ///
-    int32_t        get_pid(int32_t error, float scaler = 1.0);
+    int32_t        get_pid(int32_t error, float scaler = 1.0, bool positive_I_only = false);  // additional argument allows lower limit on integrator to be set to 0 instead of -_imax
 
     /// Reset the PID integrator
     ///

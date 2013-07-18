@@ -16,7 +16,7 @@ const AP_Param::GroupInfo PID::var_info[] PROGMEM = {
 };
 
 int32_t
-PID::get_pid(int32_t error, float scaler)
+PID::get_pid(int32_t error, float scaler, bool positive_I_only)  // additional argument allows lower limit on integrator to be set to 0 instead of -_imax
 {
     uint32_t tnow = millis();
     uint32_t dt = tnow - _last_t;
@@ -63,13 +63,23 @@ PID::get_pid(int32_t error, float scaler)
     // Compute integral component if time has elapsed
     if ((fabs(_ki) > 0) && (dt > 0)) {
         _integrator             += (error * _ki) * scaler * delta_time;
-        if (_integrator < -_imax) {
-            _integrator = -_imax;
-        } else if (_integrator > _imax) {
-            _integrator = _imax;
-        }
-        output                          += _integrator;
-    }
+        
+		if (positive_I_only) { // If true, dont want integrator value to be able to go negative (very important for hover throttle controller)
+			if (_integrator < 0) {
+				_integrator = 0;
+			} else if (_integrator > _imax) {
+				_integrator = _imax;
+			}
+		} else {
+			if (_integrator < -_imax) {
+				_integrator = -_imax;
+			} else if (_integrator > _imax) {
+				_integrator = _imax;
+			}
+		}
+		output                          += _integrator;
+
+	}
 
     return output;
 }
