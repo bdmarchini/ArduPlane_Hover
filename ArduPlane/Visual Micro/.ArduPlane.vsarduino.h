@@ -45,6 +45,7 @@ static void calc_throttle_hover();
 static void calc_sink_rate();
 static void check_pitch_diverge();
 static void check_yaw_diverge();
+static void hover_check();
 float pitch_reference_model();
 static void calc_Gdot(float e_roll, float e_pitch, float e_yaw);
 static void integrate_Gdot();

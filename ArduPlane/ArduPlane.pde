@@ -550,6 +550,9 @@ static bool diverge_yaw = false;
 static uint32_t last_t_pitch;
 static uint32_t last_t_yaw;
 
+// flags for switching to PIDs once in hover
+static bool hover_flag = false;
+
 // variables needed for sink rate calculation
 static int32_t sink_rate;
 static int32_t last_alt;
@@ -560,17 +563,17 @@ static float last_derivative_alt;
 static float pitch_final; // desired pitch angle at end of manuever
 static float pitch_init; // initial pitch angle at start of manuever
 static float pitch_desired; // current desired pitch angle
-const float ZETA = 1; // damping ratio, needs to be greater than 0
-const float OMEGA_N = 1.8/1; // natural frequency (denominator is rise time in seconds)
+const float ZETA = 0.7; // damping ratio, needs to be greater than 0
+const float OMEGA_N = 1.8/2; // natural frequency (denominator is rise time in seconds)
 static uint32_t t_start_hover; // time at start of hover manuever
 static float pitch_desired_deg;
 
 //variables needed for adaptive controller
 static Matrix3f G;                     /////Initialize adaptive gain matrix
 static Matrix3f Gdot;			      // Initialize derivative of adaptive gain matrix
-const Matrix3f G0(-1.0, 0.0, 0.0,     /////Initial values for adaptive gain matrix
-				  0.0, -1.0, 0.0, 
-				  0.0, 0.0, -1.0);
+const Matrix3f G0(-0.15, 0.0, 0.0,     /////Initial values for adaptive gain matrix
+				  0.0, -0.27, 0.0, 
+				  0.0, 0.0, -0.3);
 
 const Matrix3f H(0.01, 0.0, 0.0,     //// Values for adaptive parameter matrix
 				  0.0, 0.01, 0.0, 
@@ -1281,16 +1284,19 @@ static void update_current_flight_mode(void)
 
 			qcommand.from_euler(0, pitch_desired, hover_yaw_hold);
 
+			// Check to see if its time to switch to PIDs when we are in adaptive mode
+			if (SWITCH_TO_PIDS) {
+				hover_check(); // switch to PIDs if within specified range
+			} else {
+				hover_flag = false; // if disabled, then only use adaptive when in adaptive mode
+			}
+
 		
-		if (control_mode == HOVER_ADAPTIVE) { // Need to apply adaptive controller to euler errors 	
+		if (control_mode == HOVER_ADAPTIVE && !(hover_flag)) { // Need to apply adaptive controller to euler errors while in adaptive transition	
 			
 			qerr = qcommand.qerror(qcurrent);                          // VERY IMPORTANT: qerr is calculated opposite way for MRAC compared to FSFB
 			// Convert quaternion error back to euler angles (rad)
 			qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
-
-			//qerr = qcurrent.qerror(qcommand);                     // This was just a check to make sure above qerr was calculated the right way
-			// Convert quaternion error back to euler angles (rad)
-			//qerr.to_euler(_roll_error, _pitch_error, _yaw_error);
 
 			// Convert from rad to deg
 			roll_error_deg = roll_error*(180/PI); pitch_error_deg = pitch_error*(180/PI); yaw_error_deg = yaw_error*(180/PI);

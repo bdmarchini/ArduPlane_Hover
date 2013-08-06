@@ -61,6 +61,10 @@ static void stabilize()
     float ch4_inf = 1.0;
     float speed_scaler = get_speed_scaler();
 
+	if ((control_mode == HOVER_ADAPTIVE && hover_flag) || control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE) {
+		speed_scaler = SPEED_SCALER_HOVER; // We are already in hover, bump speed scaler up to desired value
+	}
+
     if(crash_timer > 0) {
         nav_roll_cd = 0;
     }
@@ -83,7 +87,13 @@ static void stabilize()
 	}	else {
 		roll_PID_input = (nav_roll_cd - ahrs.roll_sensor);
 	}
-	g.channel_roll.servo_out = g.pidServoRoll.get_pid(roll_PID_input, speed_scaler);
+
+	if (control_mode == HOVER_ADAPTIVE && !(hover_flag)) {
+		g.channel_roll.servo_out = roll_PID_input; // if using adaptive, dont feed error into PIDs
+	}else {
+		g.channel_roll.servo_out = g.pidServoRoll.get_pid(roll_PID_input, speed_scaler); // otherwise feed into PIDs
+	}
+
 	g.channel_roll.servo_out = constrain(g.channel_roll.servo_out, -SERVO_MAX, SERVO_MAX); // Added constrain to prevent runaway PWM rates
 
 	// Calculate dersired servo output for the roll
@@ -104,7 +114,12 @@ static void stabilize()
 		}
 		pitch_PID_input = tempcalc;
 	}
-	g.channel_pitch.servo_out = g.pidServoPitch.get_pid(pitch_PID_input, speed_scaler);
+	if (control_mode == HOVER_ADAPTIVE && !(hover_flag)) {
+		g.channel_pitch.servo_out = pitch_PID_input; // if using adaptive, dont feed error into PIDs
+	} else {
+		g.channel_pitch.servo_out = g.pidServoPitch.get_pid(pitch_PID_input, speed_scaler);
+	} 
+
 	g.channel_pitch.servo_out = constrain(g.channel_pitch.servo_out, -SERVO_MAX, SERVO_MAX); // Added constrain to prevent runaway PWM rates
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -346,6 +361,20 @@ static void check_yaw_diverge()
 
 
 /*****************************************
+* Check to see if hover has been achieved yet
+*****************************************/
+static void hover_check()
+{
+	if (hover_flag || (ahrs.pitch*(180/PI) >= (pitch_final*(180/PI) - (float) HOVER_ANGLE_DIF))) {
+    // Airplane has reached hover (need to reset this externally every time we switch into adaptive mode)
+		hover_flag = true;
+	} else {
+		hover_flag = false;
+	}
+}
+
+
+/*****************************************
 * Calcuate pitch reference model output (in fast freq loop)
 *****************************************/
 float pitch_reference_model() {
@@ -464,7 +493,11 @@ static void calc_nav_yaw(float speed_scaler, float ch4_inf)
 	/////////////////////////////////////////////////////////////////// I added this stuff//////////////////////////////////////////////////////////////////////////////////////////////////
 	if (control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE || control_mode == HOVER_ADAPTIVE) {  
 		
-		g.channel_rudder.servo_out = g.pidServoRudder.get_pid(yaw_error_centdeg, speed_scaler);
+		if (control_mode == HOVER_ADAPTIVE && !(hover_flag)) {
+			g.channel_rudder.servo_out = yaw_error_centdeg; // if using adaptive, dont feed error into PIDs
+		} else {
+			g.channel_rudder.servo_out = g.pidServoRudder.get_pid(yaw_error_centdeg, speed_scaler);
+		}
 		g.channel_rudder.servo_out = constrain(g.channel_rudder.servo_out, -SERVO_MAX, SERVO_MAX);  // Added constrain to prevent runaway PWM rates
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	}	else {

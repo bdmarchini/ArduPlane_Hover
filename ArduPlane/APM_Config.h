@@ -54,3 +54,14 @@
 
 // Fequency cut off (Hz) for discrete low pass filter on altitude derivative
 #define _fCut_alt 20   // Set at 1 Hz originally bit I think that might have been hurting throttle controller performance so moved it back to standard 20 Hz
+
+// Pitch angle (deg) away from target pitch angle at which airplane is considered to be in hover (switch to PIDS)
+// example: HOVER_ANGLE_DIF = 5.0 means control will switch from adaptive to PIDs at 85 deg if trying to get to 90 deg
+#define HOVER_ANGLE_DIF 5.0
+
+// Default speed scaler value when in hover
+#define SPEED_SCALER_HOVER 3.0
+
+// If enabled, means controller will switch from adaptive to PIDs once pitch angle is withing HOVER_ANGLE_DIF (deg) of pitch_final 
+#define SWITCH_TO_PIDS ENABLED
+//#define SWITCH_TO_PIDS DISABLED
