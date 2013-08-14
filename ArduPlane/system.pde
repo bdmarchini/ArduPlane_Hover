@@ -359,7 +359,6 @@ static void set_mode(byte mode)
 	case HOVER_ADAPTIVE:
 		G = G0; // reinitialize G matrix to G0
 		Gdot.zero(); // Reset Gdot matrix to all zeros
-		hover_flag = false; // Use adaptive controller until hover is achieved
 
 	case HOVER_PID_REFERENCE:
 		t_start_hover = millis(); // get the start time of the hover manuever 
@@ -368,6 +367,8 @@ static void set_mode(byte mode)
 	case HOVER_PID:  
 		hover_yaw_hold = ahrs.yaw;
 		hover_yaw_hold_deg = hover_yaw_hold*(180/PI);
+		hover_flag = false; // If in adaptive mode, will use use adaptive controller until in hover then switch to PIDS
+							// for other two modes, it just keeps the speed scaler lower until hover is reached
 		break;
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

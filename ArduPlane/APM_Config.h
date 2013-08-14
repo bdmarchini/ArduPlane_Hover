@@ -39,12 +39,15 @@
 //#define PITCH_LIMITER ENABLED
 #define PITCH_LIMITER DISABLED 
 
+// If enabled, means controller will switch from adaptive to PIDs once pitch angle is withing HOVER_ANGLE_DIF (deg) of pitch_final 
+#define SWITCH_TO_PIDS ENABLED
+//#define SWITCH_TO_PIDS DISABLED
 
 /////// Hard coded variables used in control algorithms///////////////////////////////////////////////////////////////
 
 // Preset throttle settings used with either yaw or pitch divergence criteria are met
 #define DIVERGENCE_THROTTLE_MAX 0.75
-#define DIVERGENCE_THROTTLE_MIN 0.4
+#define DIVERGENCE_THROTTLE_MIN 0.5
 
 // Angle (deg) at which divergence criteria is met when in hover
 #define DIVERGENCE_ANGLE 5.0
@@ -60,8 +63,5 @@
 #define HOVER_ANGLE_DIF 5.0
 
 // Default speed scaler value when in hover
-#define SPEED_SCALER_HOVER 3.0
+#define SPEED_SCALER_HOVER 5.0
 
-// If enabled, means controller will switch from adaptive to PIDs once pitch angle is withing HOVER_ANGLE_DIF (deg) of pitch_final 
-#define SWITCH_TO_PIDS ENABLED
-//#define SWITCH_TO_PIDS DISABLED

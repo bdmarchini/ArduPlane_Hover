@@ -61,7 +61,8 @@ static void stabilize()
     float ch4_inf = 1.0;
     float speed_scaler = get_speed_scaler();
 
-	if ((control_mode == HOVER_ADAPTIVE && hover_flag) || control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE) {
+	if ((control_mode == HOVER_ADAPTIVE || control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE) && hover_flag) { 
+		// Changed this to keep PID gains low for all hover flight modes before getting to vertical orientation, not just adaptive one
 		speed_scaler = SPEED_SCALER_HOVER; // We are already in hover, bump speed scaler up to desired value
 	}
 
@@ -366,7 +367,7 @@ static void check_yaw_diverge()
 static void hover_check()
 {
 	if (hover_flag || (ahrs.pitch*(180/PI) >= (pitch_final*(180/PI) - (float) HOVER_ANGLE_DIF))) {
-    // Airplane has reached hover (need to reset this externally every time we switch into adaptive mode)
+    // Airplane has reached hover (need to reset this externally every time we switch into hover mode)
 		hover_flag = true;
 	} else {
 		hover_flag = false;
