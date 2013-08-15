@@ -43,7 +43,13 @@
 #define SWITCH_TO_PIDS ENABLED
 //#define SWITCH_TO_PIDS DISABLED
 
+// If enabled, feed forward gain from throttle to roll will be used to compensator fr motor tourqe in 
+#define HOVER_ROLL_COMP ENABLED
+//#define HOVER_ROLL_COMP DISABLED
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////// Hard coded variables used in control algorithms///////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Preset throttle settings used with either yaw or pitch divergence criteria are met
 #define DIVERGENCE_THROTTLE_MAX 0.75
@@ -65,3 +71,5 @@
 // Default speed scaler value when in hover
 #define SPEED_SCALER_HOVER 5.0
 
+// Feed forward gain for aileron motor tourqe compensation
+#define KFF_HOVER_THR2ROLL 20.0
