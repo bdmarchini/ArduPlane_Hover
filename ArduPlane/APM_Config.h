@@ -73,3 +73,5 @@
 
 // Feed forward gain for aileron motor tourqe compensation
 #define KFF_HOVER_THR2ROLL 20.0
+// Feed forward offset value (Increases aileron deflection same ammount for ALL throttle values)
+#define KFF_HOVER_THR2ROLL_OFFSET 25

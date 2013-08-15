@@ -99,7 +99,7 @@ static void stabilize()
 	if (control_mode == HOVER_ADAPTIVE && !(hover_flag)) {
 		g.channel_roll.servo_out = roll_PID_input; // if using adaptive, dont feed error into PIDs
 	}else {
-		int32_t FF_hover_roll = kff_hover_thr2roll*g.channel_throttle.servo_out; // calc feed forward portion of roll control
+		int32_t FF_hover_roll = kff_hover_thr2roll*(g.channel_throttle.servo_out + KFF_HOVER_THR2ROLL_OFFSET); // calc feed forward portion of roll control
 		g.channel_roll.servo_out = g.pidServoRoll.get_pid(roll_PID_input, speed_scaler) + FF_hover_roll; // otherwise feed into PIDs and FF gain
 	}
 
