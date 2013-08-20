@@ -44,8 +44,8 @@
 //#define SWITCH_TO_PIDS DISABLED
 
 // If enabled, feed forward gain from throttle to roll will be used to compensator fr motor tourqe in 
-#define HOVER_ROLL_COMP ENABLED
-//#define HOVER_ROLL_COMP DISABLED
+//#define HOVER_ROLL_COMP ENABLED
+#define HOVER_ROLL_COMP DISABLED
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////// Hard coded variables used in control algorithms///////////////////////////////////////////////////////////////
@@ -73,5 +73,6 @@
 
 // Feed forward gain for aileron motor tourqe compensation
 #define KFF_HOVER_THR2ROLL 20.0
-// Feed forward offset value (Increases aileron deflection same ammount for ALL throttle values)
-#define KFF_HOVER_THR2ROLL_OFFSET 25
+
+// Feed forward aileron offset value (Increases aileron deflection this number of centidegrees for ALL throttle values)
+#define HOVER_AIL_OFFSET 500

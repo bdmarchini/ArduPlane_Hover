@@ -61,15 +61,17 @@ static void stabilize()
     float ch4_inf = 1.0;
     float speed_scaler = get_speed_scaler();
 	
-	float kff_hover_thr2roll = 0.0;  //set to zero to start, then override is necessary just like speed_scaller
+	float kff_hover_thr2roll = 0.0;  //set to zero to start, then override if necessary just like speed_scaller
+	int32_t hover_ail_offset = 0;  // same as above
 
 	if ((control_mode == HOVER_ADAPTIVE || control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE) && hover_flag) { 
 		// Changed this to keep PID gains low for all hover flight modes before getting to vertical orientation, not just adaptive one
 		speed_scaler = SPEED_SCALER_HOVER; // We are already in hover, bump speed scaler up to desired value
 
 		if (HOVER_ROLL_COMP) {
-			// Set hover throttle to roll feed forward gain
+			// Set hover throttle to roll feed forward gain and aileron offset
 			kff_hover_thr2roll = KFF_HOVER_THR2ROLL;
+			hover_ail_offset = HOVER_AIL_OFFSET;
 		}
 	}
 
@@ -99,7 +101,7 @@ static void stabilize()
 	if (control_mode == HOVER_ADAPTIVE && !(hover_flag)) {
 		g.channel_roll.servo_out = roll_PID_input; // if using adaptive, dont feed error into PIDs
 	}else {
-		int32_t FF_hover_roll = kff_hover_thr2roll*(g.channel_throttle.servo_out + KFF_HOVER_THR2ROLL_OFFSET); // calc feed forward portion of roll control
+		int32_t FF_hover_roll = kff_hover_thr2roll*(g.channel_throttle.servo_out) + hover_ail_offset; // calc feed forward portion of roll control
 		g.channel_roll.servo_out = g.pidServoRoll.get_pid(roll_PID_input, speed_scaler) + FF_hover_roll; // otherwise feed into PIDs and FF gain
 	}
 
