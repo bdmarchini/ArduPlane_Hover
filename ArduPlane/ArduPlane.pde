@@ -564,7 +564,7 @@ static float pitch_final; // desired pitch angle at end of manuever
 static float pitch_init; // initial pitch angle at start of manuever
 static float pitch_desired; // current desired pitch angle
 const float ZETA = 0.7; // damping ratio, needs to be greater than 0
-const float OMEGA_N = 1.8/2; // natural frequency (denominator is rise time in seconds)
+const float OMEGA_N = 1.8/RISE_TIME; // natural frequency (denominator is rise time in seconds (defined in APM_config))
 static uint32_t t_start_hover; // time at start of hover manuever
 static float pitch_desired_deg;
 
@@ -573,7 +573,7 @@ static Matrix3f G;                     /////Initialize adaptive gain matrix
 static Matrix3f Gdot;			      // Initialize derivative of adaptive gain matrix
 const Matrix3f G0(-0.15, 0.0, 0.0,     /////Initial values for adaptive gain matrix
 				  0.0, -0.27, 0.0, 
-				  0.0, 0.0, -0.3);
+				  0.0, 0.0, -0.35);
 
 const Matrix3f H(0.01, 0.0, 0.0,     //// Values for adaptive parameter matrix
 				  0.0, 0.01, 0.0, 

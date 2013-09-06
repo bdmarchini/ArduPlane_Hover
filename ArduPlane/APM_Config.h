@@ -76,3 +76,6 @@
 
 // Feed forward aileron offset value (Increases aileron deflection this number of centidegrees for ALL throttle values)
 #define HOVER_AIL_OFFSET 500
+
+// Reference model rise time (in seconds)
+#define RISE_TIME 20
