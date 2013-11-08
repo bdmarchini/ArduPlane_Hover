@@ -341,6 +341,7 @@ static void set_mode(byte mode)
     if(g.auto_trim > 0 && control_mode == MANUAL)
         trim_control_surfaces();
 
+	byte old_mode = control_mode;
     control_mode = mode;
     crash_timer = 0;
 
@@ -353,6 +354,10 @@ static void set_mode(byte mode)
     case FLY_BY_WIRE_A:
     case FLY_BY_WIRE_B:
 		g.pidServoRudder.reset_I();
+		if(old_mode == HOVER_ADAPTIVE || control_mode == HOVER_PID || control_mode == HOVER_PID_REFERENCE) {
+			g.pidServoPitch.reset_I();  // reset integrator terms when switching from hover modes
+			g.pidServoRoll.reset_I();
+		}
         break;
 
 		////////////////////////////////////////////////// I added this //////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -571,13 +571,13 @@ static float pitch_desired_deg;
 //variables needed for adaptive controller
 static Matrix3f G;                     /////Initialize adaptive gain matrix
 static Matrix3f Gdot;			      // Initialize derivative of adaptive gain matrix
-const Matrix3f G0(-0.15, 0.0, 0.0,     /////Initial values for adaptive gain matrix
+const Matrix3f G0(-0.15/2, 0.0, 0.0,     /////Initial values for adaptive gain matrix
 				  0.0, -0.27, 0.0, 
-				  0.0, 0.0, -0.35);
+				  0.0, 0.0, -0.35/2);
 
-const Matrix3f H(0.01, 0.0, 0.0,     //// Values for adaptive parameter matrix
+const Matrix3f H(0.01/2, 0.0, 0.0,     //// Values for adaptive parameter matrix
 				  0.0, 0.01, 0.0, 
-				  0.0, 0.0, 0.01);
+				  0.0, 0.0, 0.01/2);
 
 static Vector3f e_y; 
 static uint32_t last_t_G; // Need to keep track of time for integrating Gdot
